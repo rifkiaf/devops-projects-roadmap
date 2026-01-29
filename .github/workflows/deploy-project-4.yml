@@ -1,9 +1,9 @@
-name: Deploy to GitHub Pages
+name: Deploy Project 4 to GitHub Pages
 
 on:
   push:
     branches:
-      - main 
+      - main
     paths:
       - '04-github-pages-deployment/**'
 

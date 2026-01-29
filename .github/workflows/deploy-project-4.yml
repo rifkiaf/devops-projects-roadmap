@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - '04-github-pages-deployment/**'
+  workflow_dispatch:
 
 permissions:
   contents: write

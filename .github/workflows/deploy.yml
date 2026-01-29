@@ -20,4 +20,6 @@ jobs:
         with:
           branch: gh-pages 
           folder: 04-github-pages-deployment
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_TOKEN }}
+
+          

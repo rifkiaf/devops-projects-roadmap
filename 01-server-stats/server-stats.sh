@@ -1,82 +1,82 @@
 #!/bin/bash
 
-# Menampilkan Header
-clear
-echo "==============================="
-echo "    Server Stats Report"
-echo "==============================="
-echo
+# =================================================================
+# Script Name   : server-stats.sh
+# Description   : Linux Server Performance Analysis Tool
+# Author        : Rifki Ahmad Fahreizi
+# Date          : 2026
+# =================================================================
 
-# Menampilkan Total Penggunaan CPU
-echo "### Total Penggunaan CPU ###"
-echo "----------------------------"
-top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print "Penggunaan CPU: " 100 - $1"%"}'
-echo
+# Variabel Warna untuk Tampilan Terminal
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color (Reset)
 
-# Menampilkan Total Penggunaan Memori
-echo "### Total Penggunaan Memori ###"
-echo "-----------------------------"
-free -h | awk '/Mem:/ {print "Terpakai: " $3 " | Tersisa: " $4 " | Total: " $2 " | Persentase Terpakai: " $3/$2*100 "%"}'
-echo
+echo -e "${BLUE}===========================================${NC}"
+echo -e "${BLUE}       SERVER PERFORMANCE STATISTICS       ${NC}"
+echo -e "${BLUE}===========================================${NC}"
 
-# Menampilkan Total Penggunaan Disk
-echo "### Total Penggunaan Disk ###"
-echo "----------------------------"
-df -h | awk '$NF=="/" {print "Terpakai: " $3 " | Tersisa: " $4 " | Total: " $2 " | Persentase Terpakai: " $5}'
-echo
+# 1. Total CPU Usage
+echo -e "\n${YELLOW}[ CPU USAGE ]${NC}"
+cpu_idle=$(top -bn1 | grep "Cpu(s)" | awk '{print $8}')
+cpu_usage=$(awk "BEGIN {print 100 - $cpu_idle}")
+echo -e "Total CPU Usage: ${GREEN}${cpu_usage}%${NC}"
 
-# Menampilkan 5 Proses Teratas Berdasarkan Penggunaan CPU
-echo "### 5 Proses Teratas Berdasarkan Penggunaan CPU ###"
-echo "-------------------------------------------------"
-ps -eo pid,comm,%cpu --sort=-%cpu | head -n 6 | awk 'NR>1 {print "PID: " $1 " | Command: " $2 " | CPU: " $3"%"}'
-echo
+# 2. Total Memory Usage (Free vs Used with %)
+echo -e "\n${YELLOW}[ MEMORY USAGE ]${NC}"
+# Menggunakan 'free -m' untuk perhitungan integer yang akurat
+free -m | awk 'NR==2{printf "Used: %sMB | Free: %sMB | Total: %sMB\nUsage Rate: %.2f%%\n", $3, $4, $2, $3*100/$2}'
 
-# Menampilkan 5 Proses Teratas Berdasarkan Penggunaan Memori
-echo "### 5 Proses Teratas Berdasarkan Penggunaan Memori ###"
-echo "----------------------------------------------------"
-ps -eo pid,comm,%mem --sort=-%mem | head -n 6 | awk 'NR>1 {print "PID: " $1 " | Command: " $2 " | Mem: " $3"%"}'
-echo
+# 3. Total Disk Usage (Free vs Used with %)
+echo -e "\n${YELLOW}[ DISK USAGE ]${NC}"
+df -h / | awk 'NR==2{printf "Used: %s | Free: %s | Total: %s\nUsage Rate: %s\n", $3, $4, $2, $5}'
 
-# Menampilkan Versi Sistem Operasi
-echo "### Versi Sistem Operasi ###"
-echo "----------------------------"
-uname -a
-echo
+# 4. Top 5 Processes by CPU Usage
+echo -e "\n${YELLOW}[ TOP 5 PROCESSES BY CPU ]${NC}"
+printf "%-7s %-20s %s\n" "PID" "COMMAND" "CPU(%)"
+# Logika AWK di bawah menangani nama proses yang mengandung spasi agar kolom tetap lurus
+ps -eo pid,comm,%cpu --sort=-%cpu | head -n 6 | tail -n 5 | awk '{
+    pid=$1; cpu=$NF; $1=$NF=""; 
+    sub(/^ +/, "", $0); sub(/ +$/, "", $0);
+    printf "%-7s %-20s %s%%\n", pid, substr($0, 1, 20), cpu
+}'
 
-# Menampilkan Waktu Aktif (Uptime)
-echo "### Waktu Aktif (Uptime) ###"
-echo "----------------------------"
-uptime -p
-echo
+# 5. Top 5 Processes by Memory Usage
+echo -e "\n${YELLOW}[ TOP 5 PROCESSES BY MEMORY ]${NC}"
+printf "%-7s %-20s %s\n" "PID" "COMMAND" "MEM(%)"
+ps -eo pid,comm,%mem --sort=-%mem | head -n 6 | tail -n 5 | awk '{
+    pid=$1; mem=$NF; $1=$NF=""; 
+    sub(/^ +/, "", $0); sub(/ +$/, "", $0);
+    printf "%-7s %-20s %s%%\n", pid, substr($0, 1, 20), mem
+}'
 
-# Menampilkan Rata-Rata Beban Sistem (Load Average)
-echo "### Rata-Rata Beban Sistem (Load Average) ###"
-echo "---------------------------------------------"
-uptime | awk -F'load average:' '{ print "Load Average: " $2 }'
-echo
+# --- STRETCH GOALS (Tambahan) ---
+echo -e "\n${BLUE}===========================================${NC}"
+echo -e "${BLUE}           SYSTEM INFORMATION              ${NC}"
+echo -e "${BLUE}===========================================${NC}"
 
-# Menampilkan Pengguna yang Masuk
-echo "### Pengguna yang Masuk ###"
-echo "--------------------------"
-who
-echo
+# OS Version
+echo -ne "${GREEN}OS Version:${NC} "
+[ -f /etc/os-release ] && grep "PRETTY_NAME" /etc/os-release | cut -d'"' -f2 || uname -sr
 
-# Menampilkan Upaya Masuk yang Gagal
-echo "### Upaya Masuk yang Gagal (Login Failures) ###"
-echo "---------------------------------------------"
-lastb | head -n 10
-echo
+# Uptime
+echo -ne "${GREEN}Uptime:${NC} " && uptime -p
 
-# Opsional: Jika ingin menambahkan limit pada failed login yang dicatat
-# Cek apakah `faillog` ada (tergantung distro dan konfigurasi)
-if command -v faillog &> /dev/null
-then
-    echo "### Upaya Masuk yang Gagal (Menggunakan faillog) ###"
-    echo "-----------------------------------------------"
-    faillog -a | head -n 10
-    echo
+# Load Average
+echo -ne "${GREEN}Load Average:${NC} " && cat /proc/loadavg | awk '{print $1, $2, $3}'
+
+# Logged in Users
+echo -ne "${GREEN}Logged in Users:${NC} " && who | wc -l
+
+# Failed Login Attempts (Hanya jika dijalankan dengan sudo)
+echo -ne "${GREEN}Failed Logins:${NC} "
+if [ "$EUID" -ne 0 ]; then
+    echo -e "${RED}(Run as sudo to see failed logins)${NC}"
+else
+    failed_count=$(lastb | grep -v "btmp begins" | grep -v "^$" | wc -l)
+    echo -e "${RED}$failed_count attempts${NC}"
 fi
 
-echo "==============================="
-echo "     End of Server Stats"
-echo "==============================="
+echo -e "${BLUE}===========================================${NC}"

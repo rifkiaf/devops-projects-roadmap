@@ -1,18 +1,11 @@
 #!/bin/bash
 
-# =================================================================
-# Script Name   : server-stats.sh
-# Description   : Linux Server Performance Analysis Tool
-# Author        : Rifki Ahmad Fahreizi
-# Date          : 2026
-# =================================================================
-
 # Variabel Warna untuk Tampilan Terminal
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color (Reset)
+NC='\033[0m'
 
 echo -e "${BLUE}===========================================${NC}"
 echo -e "${BLUE}       SERVER PERFORMANCE STATISTICS       ${NC}"
@@ -26,7 +19,6 @@ echo -e "Total CPU Usage: ${GREEN}${cpu_usage}%${NC}"
 
 # 2. Total Memory Usage (Free vs Used with %)
 echo -e "\n${YELLOW}[ MEMORY USAGE ]${NC}"
-# Menggunakan 'free -m' untuk perhitungan integer yang akurat
 free -m | awk 'NR==2{printf "Used: %sMB | Free: %sMB | Total: %sMB\nUsage Rate: %.2f%%\n", $3, $4, $2, $3*100/$2}'
 
 # 3. Total Disk Usage (Free vs Used with %)
@@ -36,7 +28,6 @@ df -h / | awk 'NR==2{printf "Used: %s | Free: %s | Total: %s\nUsage Rate: %s\n",
 # 4. Top 5 Processes by CPU Usage
 echo -e "\n${YELLOW}[ TOP 5 PROCESSES BY CPU ]${NC}"
 printf "%-7s %-20s %s\n" "PID" "COMMAND" "CPU(%)"
-# Logika AWK di bawah menangani nama proses yang mengandung spasi agar kolom tetap lurus
 ps -eo pid,comm,%cpu --sort=-%cpu | head -n 6 | tail -n 5 | awk '{
     pid=$1; cpu=$NF; $1=$NF=""; 
     sub(/^ +/, "", $0); sub(/ +$/, "", $0);

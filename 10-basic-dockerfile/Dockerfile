@@ -1,5 +1,5 @@
 # Base Image
-FROM alpine:3.23.3
+FROM alpine:3.22.4
 
 # Metadata
 LABEL maintainer="user"
